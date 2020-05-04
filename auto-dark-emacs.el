@@ -80,14 +80,19 @@ end tell")))
     (if (not (eq is-dark-mode auto-dark-emacs/last-dark-mode-state))
         (progn
           (setq auto-dark-emacs/last-dark-mode-state is-dark-mode)
+          (while custom-enabled-themes
+            (disable-theme (car custom-enabled-themes)))
           (if is-dark-mode
-              (progn
-                (load-theme auto-dark-emacs/dark-theme t)
-                (disable-theme auto-dark-emacs/light-theme))
-            (progn
-              (load-theme auto-dark-emacs/light-theme t)
-              (disable-theme auto-dark-emacs/dark-theme)))))))
+              (load-theme (if (listp auto-dark-emacs/dark-theme)
+                              (elt auto-dark-emacs/dark-theme
+                                   (random (length auto-dark-emacs/dark-theme)))
+                            auto-dark-emacs/dark-theme)
+                          t)
+            (load-theme (if (listp auto-dark-emacs/light-theme)
+                            (elt auto-dark-emacs/light-theme
+                                 (random (length auto-dark-emacs/light-theme)))
+                          auto-dark-emacs/light-theme)
+                        t))))))
 
-(run-with-timer 0 auto-dark-emacs/polling-interval-seconds 'auto-dark-emacs/check-and-set-dark-mode)
 
 (provide 'auto-dark-emacs)
