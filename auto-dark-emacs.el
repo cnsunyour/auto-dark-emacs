@@ -27,6 +27,10 @@
 
 ;;; Code:
 
+(eval-when-compile
+  (require 'cl))
+(require 'solar)
+
 (defcustom auto-dark-emacs/dark-theme 'wombat
   "The theme to enable when dark-mode is active"
   :group 'auto-dark-emacs)
@@ -45,19 +49,61 @@
   :group 'auto-dark-emacs
   :type 'boolean)
 
-(setq auto-dark-emacs/last-dark-mode-state 'unknown)
+(defvar auto-dark-emacs/last-dark-mode-state nil)
+
+(defun auto-dark-emacs/hour-fraction-to-time (date hour-fraction)
+  (let*
+      ((now (decode-time (current-time)))
+
+       (month (first   date))
+       (day   (second  date))
+       (year  (third   date))
+       (zone  (ninth   now))
+
+       (frac-hour (cl-truncate hour-fraction))
+       (hour (first frac-hour))
+
+       (frac-minutes (cl-truncate (* (second frac-hour) 60)))
+       (minute (first frac-minutes))
+
+       (frac-seconds (cl-truncate (* (second frac-minutes) 60)))
+       (sec (first frac-seconds)))
+    (encode-time sec minute hour day month year zone)))
+
+
+(defun auto-dark-emacs/sunrise-sunset-times (date)
+  (let*
+      ((l (solar-sunrise-sunset date))
+       (sunrise-time (auto-dark-emacs/hour-fraction-to-time date (caar l)))
+       (sunset-time (auto-dark-emacs/hour-fraction-to-time date (caadr l))))
+    (if (> emacs-major-version 26)
+        (list (encode-time (decode-time sunrise-time))
+              (encode-time (decode-time sunset-time)))
+      (list sunrise-time sunset-time))))
+
+(defun auto-dark-emacs/today () (calendar-current-date))
+
+(defun auto-dark-emacs/tomorrow ()
+  (calendar-gregorian-from-absolute
+   (+ 1 (calendar-absolute-from-gregorian (auto-dark-emacs/today)))))
+
+(defun auto-dark-emacs/add-second (time)
+  (let ((newtime (time-add time (seconds-to-time 1))))
+    (if (> emacs-major-version 26)
+        (encode-time (decode-time newtime))
+      newtime)))
 
 (defun auto-dark-emacs/is-dark-mode-builtin ()
   "Invoke applescript using Emacs built-in AppleScript support to see if dark mode is enabled. Returns true if it is."
 
   (string-equal "true" (ns-do-applescript "tell application \"System Events\"
-	tell appearance preferences
-		if (dark mode) then
-			return \"true\"
-		else
-			return \"false\"
-		end if
-	end tell
+  tell appearance preferences
+    if (dark mode) then
+      return \"true\"
+    else
+      return \"false\"
+    end if
+  end tell
 end tell")))
 
 (defun auto-dark-emacs/is-dark-mode-osascript ()
@@ -77,22 +123,36 @@ end tell")))
   "Sets the theme according to Mac OS's dark mode state. In order to prevent flickering, we only set the theme if we haven't already set the theme for the current dark mode state."
   ;; Get's MacOS dark mode state
   (let ((is-dark-mode (auto-dark-emacs/is-dark-mode)))
-    (if (not (eq is-dark-mode auto-dark-emacs/last-dark-mode-state))
-        (progn
-          (setq auto-dark-emacs/last-dark-mode-state is-dark-mode)
-          (while custom-enabled-themes
-            (disable-theme (car custom-enabled-themes)))
-          (if is-dark-mode
-              (load-theme (if (listp auto-dark-emacs/dark-theme)
-                              (elt auto-dark-emacs/dark-theme
-                                   (random (length auto-dark-emacs/dark-theme)))
-                            auto-dark-emacs/dark-theme)
-                          t)
-            (load-theme (if (listp auto-dark-emacs/light-theme)
-                            (elt auto-dark-emacs/light-theme
-                                 (random (length auto-dark-emacs/light-theme)))
-                          auto-dark-emacs/light-theme)
-                        t))))))
+    (if (and auto-dark-emacs/last-dark-mode-state
+             (eq is-dark-mode auto-dark-emacs/last-dark-mode-state))
+        (run-with-idle-timer auto-dark-emacs/polling-interval-seconds nil
+                             #'auto-dark-emacs/check-and-set-dark-mode)
+      (setq auto-dark-emacs/last-dark-mode-state is-dark-mode)
+      (while custom-enabled-themes
+        (disable-theme (car custom-enabled-themes)))
+      (if is-dark-mode
+          (load-theme (if (listp auto-dark-emacs/dark-theme)
+                          (elt auto-dark-emacs/dark-theme
+                               (random (length auto-dark-emacs/dark-theme)))
+                        auto-dark-emacs/dark-theme)
+                      t)
+        (load-theme (if (listp auto-dark-emacs/light-theme)
+                        (elt auto-dark-emacs/light-theme
+                             (random (length auto-dark-emacs/light-theme)))
+                      auto-dark-emacs/light-theme)
+                    t))
+      (let* ((now (current-time))
+             (today-sunrise-sunset (auto-dark-emacs/sunrise-sunset-times
+                                    (auto-dark-emacs/today)))
+             (sunrise-today (first today-sunrise-sunset))
+             (sunset-today (last today-sunrise-sunset))
+             (sunrise-tomorrow (first (auto-dark-emacs/sunrise-sunset-times
+                                       (auto-dark-emacs/tomorrow))))
+             (next-change (cond ((time-less-p now sunrise-today) sunrise-today)
+                                ((time-less-p now sunset-today) sunset-today)
+                                (t sunrise-tomorrow))))
+        (run-at-time (auto-dark-emacs/add-second next-change) nil
+                     #'auto-dark-emacs/check-and-set-dark-mode)))))
 
 
 (provide 'auto-dark-emacs)
