@@ -87,12 +87,6 @@
   (calendar-gregorian-from-absolute
    (+ 1 (calendar-absolute-from-gregorian (auto-dark-emacs/today)))))
 
-(defun auto-dark-emacs/add-second (time)
-  (let ((newtime (time-add time (seconds-to-time 1))))
-    (if (> emacs-major-version 26)
-        (encode-time (decode-time newtime))
-      newtime)))
-
 (defun auto-dark-emacs/is-dark-mode-builtin ()
   "Invoke applescript using Emacs built-in AppleScript support to see if dark mode is enabled. Returns true if it is."
 
@@ -144,14 +138,14 @@ end tell")))
       (let* ((now (current-time))
              (today-sunrise-sunset (auto-dark-emacs/sunrise-sunset-times
                                     (auto-dark-emacs/today)))
-             (sunrise-today (first today-sunrise-sunset))
-             (sunset-today (last today-sunrise-sunset))
-             (sunrise-tomorrow (first (auto-dark-emacs/sunrise-sunset-times
+             (sunrise-today (car today-sunrise-sunset))
+             (sunset-today (cadr today-sunrise-sunset))
+             (sunrise-tomorrow (car (auto-dark-emacs/sunrise-sunset-times
                                        (auto-dark-emacs/tomorrow))))
              (next-change (cond ((time-less-p now sunrise-today) sunrise-today)
                                 ((time-less-p now sunset-today) sunset-today)
                                 (t sunrise-tomorrow))))
-        (run-at-time (auto-dark-emacs/add-second next-change) nil
+        (run-at-time next-change nil
                      #'auto-dark-emacs/check-and-set-dark-mode)))))
 
 
