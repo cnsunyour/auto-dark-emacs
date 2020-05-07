@@ -125,8 +125,7 @@ end tell")))
         (run-with-idle-timer auto-dark-emacs/polling-interval-seconds nil
                              #'auto-dark-emacs/check-and-set-dark-mode)
       (setq auto-dark-emacs/last-dark-mode-state is-dark-mode)
-      (while custom-enabled-themes
-        (disable-theme (car custom-enabled-themes)))
+      (mapc #'disable-theme custom-enabled-themes)
       (if is-dark-mode
           (load-theme (if (listp auto-dark-emacs/dark-theme)
                           (elt auto-dark-emacs/dark-theme
