@@ -13,6 +13,9 @@
 ;; URL: https://github.com/LionyxML/auto-dark-emacs
 ;;
 ;; This file is not part of GNU Emacs.
+;;
+;; Copy some codes from https://github.com/hadronzoo/theme-changer,
+;; Thanks for Joshua Griffith (hadronzoo@github.com).
 
 ;;; Commentary:
 
