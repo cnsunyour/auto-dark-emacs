@@ -36,28 +36,32 @@
 (require 'solar)
 
 (defcustom auto-dark-emacs/dark-theme 'wombat
-  "The theme to enable when dark-mode is active"
+  "The theme to enable when dark-mode is active."
   :group 'auto-dark-emacs)
 
 (defcustom auto-dark-emacs/light-theme 'leuven
-  "The theme to enable when dark-mode is inactive"
+  "The theme to enable when dark-mode is inactive."
   :group 'auto-dark-emacs)
 
 (defcustom auto-dark-emacs/polling-interval-seconds 5
-  "The number of seconds between which to poll for dark mode
-state. Emacs must be restarted for this value to take effect"
+  "The number of seconds between which to poll for dark mode state.
+Emacs must be restarted for this value to take effect"
   :group 'auto-dark-emacs
   :type 'integer)
 
 (defcustom auto-dark-emacs/allow-osascript nil
-  "Whether to allow auto-dark-mode to shell out to osascript to
-check dark-mode state, if ns-do-applescript is not available"
+  "Whether to allow shell out to osascript to check dark-mode state.
+If `ns-do-applescript' is not available."
   :group 'auto-dark-emacs
   :type 'boolean)
 
 (defvar auto-dark-emacs/last-dark-mode-state nil)
 
 (defun auto-dark-emacs/hour-fraction-to-time (date hour-fraction)
+  "Merge fract time to the full time form.
+
+DATE is a Gregorian DATE.
+HOUR-FRACTION is List of *local* times."
   (let*
       ((now (decode-time (current-time)))
 
@@ -78,6 +82,9 @@ check dark-mode state, if ns-do-applescript is not available"
 
 
 (defun auto-dark-emacs/sunrise-sunset-times (date)
+  "Get sunrise/sunset time of the special day.
+
+DATE is a Gregorian DATE."
   (let*
       ((l (solar-sunrise-sunset date))
        (sunrise-time (auto-dark-emacs/hour-fraction-to-time date (caar l)))
@@ -94,7 +101,8 @@ check dark-mode state, if ns-do-applescript is not available"
    (+ 1 (calendar-absolute-from-gregorian (auto-dark-emacs/today)))))
 
 (defun auto-dark-emacs/is-dark-mode-builtin ()
-  "Invoke applescript using Emacs built-in AppleScript support to
+  "Check if the dark mode is enabled.
+Invoke applescript using Emacs built-in AppleScript support to
 see if dark mode is enabled. Returns true if it is."
   (ignore-errors
     (ns-do-applescript
@@ -109,8 +117,8 @@ see if dark mode is enabled. Returns true if it is."
 end tell")))
 
 (defun auto-dark-emacs/is-dark-mode-osascript ()
-  "Invoke applescript using Emacs using external shell command;
-this is less efficient, but works for non-GUI emacs"
+  "Invoke applescript using Emacs using external shell command.
+this is less efficient, but works for non-GUI Emacs"
   (let ((cmd-res (string-trim
                   (shell-command-to-string
                    "osascript -e 'tell application \"System Events\" to tell appearance preferences to return dark mode'"))))
@@ -120,7 +128,8 @@ this is less efficient, but works for non-GUI emacs"
       nil)))
 
 (defun auto-dark-emacs/is-dark-mode ()
-  "If supported, invoke applescript using Emacs built-in
+  "Weather if the dark mode is enabled.
+If supported, invoke applescript using Emacs built-in
 AppleScript support to see if dark mode is enabled. Otherwise,
 check dark-mode status using osascript, if allowed by
 auto-dark-emacs/allow-osascript."
@@ -130,8 +139,8 @@ auto-dark-emacs/allow-osascript."
       (auto-dark-emacs/is-dark-mode-osascript))))
 
 (defun auto-dark-emacs/check-and-set-dark-mode ()
-  "Sets the theme according to Mac OS's dark mode state. In order
-to prevent flickering, we only set the theme if we haven't
+  "Set the theme according to Mac OS's dark mode state.
+In order to prevent flickering, we only set the theme if we haven't
 already set the theme for the current dark mode state."
   ;; Get's MacOS dark mode state
   (let ((is-dark-mode (auto-dark-emacs/is-dark-mode)))
@@ -168,3 +177,5 @@ already set the theme for the current dark mode state."
 
 
 (provide 'auto-dark-emacs)
+
+;;; auto-dark-emacs.el ends here
