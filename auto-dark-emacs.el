@@ -20,7 +20,8 @@
 ;;; Commentary:
 
 ;; Auto-Dark is an auto-changer between 2 themes, dark/light, respecting the
-;; overall settings of MacOS. To enable it, install the package, add it to your load path, and:
+;; overall settings of MacOS. To enable it, install the package, add it to your
+;; load path, and:
 ;;
 ;;     (require 'auto-dark-emacs)
 ;;
@@ -43,12 +44,14 @@
   :group 'auto-dark-emacs)
 
 (defcustom auto-dark-emacs/polling-interval-seconds 5
-  "The number of seconds between which to poll for dark mode state. Emacs must be restarted for this value to take effect"
+  "The number of seconds between which to poll for dark mode
+state. Emacs must be restarted for this value to take effect"
   :group 'auto-dark-emacs
   :type 'integer)
 
 (defcustom auto-dark-emacs/allow-osascript nil
-  "Whether to allow auto-dark-mode to shell out to osascript to check dark-mode state, if ns-do-applescript is not available"
+  "Whether to allow auto-dark-mode to shell out to osascript to
+check dark-mode state, if ns-do-applescript is not available"
   :group 'auto-dark-emacs
   :type 'boolean)
 
@@ -91,9 +94,11 @@
    (+ 1 (calendar-absolute-from-gregorian (auto-dark-emacs/today)))))
 
 (defun auto-dark-emacs/is-dark-mode-builtin ()
-  "Invoke applescript using Emacs built-in AppleScript support to see if dark mode is enabled. Returns true if it is."
-
-  (string-equal "true" (ns-do-applescript "tell application \"System Events\"
+  "Invoke applescript using Emacs built-in AppleScript support to
+see if dark mode is enabled. Returns true if it is."
+  (ignore-errors
+    (ns-do-applescript
+     "tell application \"System Events\"
   tell appearance preferences
     if (dark mode) then
       return \"true\"
@@ -104,29 +109,40 @@
 end tell")))
 
 (defun auto-dark-emacs/is-dark-mode-osascript ()
-  "Invoke applescript using Emacs using external shell command; this is less efficient, but works for non-GUI emacs"
-
-  (string-equal "true" (string-trim (shell-command-to-string "osascript -e 'tell application \"System Events\" to tell appearance preferences to return dark mode'"))))
+  "Invoke applescript using Emacs using external shell command;
+this is less efficient, but works for non-GUI emacs"
+  (let ((cmd-res (string-trim
+                  (shell-command-to-string
+                   "osascript -e 'tell application \"System Events\" to tell appearance preferences to return dark mode'"))))
+    (if (or (string-equal cmd-res "true")
+            (string-equal cmd-res "false"))
+        cmd-res
+      nil)))
 
 (defun auto-dark-emacs/is-dark-mode ()
-  "If supported, invoke applescript using Emacs built-in AppleScript support to see if dark mode is enabled. Otherwise, check dark-mode status using osascript, if allowed by auto-dark-emacs/allow-osascript."
-
+  "If supported, invoke applescript using Emacs built-in
+AppleScript support to see if dark mode is enabled. Otherwise,
+check dark-mode status using osascript, if allowed by
+auto-dark-emacs/allow-osascript."
   (if (fboundp 'ns-do-applescript)
       (auto-dark-emacs/is-dark-mode-builtin)
-
-    (and auto-dark-emacs/allow-osascript (auto-dark-emacs/is-dark-mode-osascript))))
+    (when auto-dark-emacs/allow-osascript
+      (auto-dark-emacs/is-dark-mode-osascript))))
 
 (defun auto-dark-emacs/check-and-set-dark-mode ()
-  "Sets the theme according to Mac OS's dark mode state. In order to prevent flickering, we only set the theme if we haven't already set the theme for the current dark mode state."
+  "Sets the theme according to Mac OS's dark mode state. In order
+to prevent flickering, we only set the theme if we haven't
+already set the theme for the current dark mode state."
   ;; Get's MacOS dark mode state
   (let ((is-dark-mode (auto-dark-emacs/is-dark-mode)))
-    (if (and auto-dark-emacs/last-dark-mode-state
-             (eq is-dark-mode auto-dark-emacs/last-dark-mode-state))
+    (if (or (not is-dark-mode)
+            (and auto-dark-emacs/last-dark-mode-state
+                 (eq is-dark-mode auto-dark-emacs/last-dark-mode-state)))
         (run-with-idle-timer auto-dark-emacs/polling-interval-seconds nil
                              #'auto-dark-emacs/check-and-set-dark-mode)
       (setq auto-dark-emacs/last-dark-mode-state is-dark-mode)
       (mapc #'disable-theme custom-enabled-themes)
-      (if is-dark-mode
+      (if (string-equal is-dark-mode "true")
           (load-theme (if (listp auto-dark-emacs/dark-theme)
                           (elt auto-dark-emacs/dark-theme
                                (random (length auto-dark-emacs/dark-theme)))
