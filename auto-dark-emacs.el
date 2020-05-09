@@ -94,19 +94,22 @@ DATE is a Gregorian DATE."
               (encode-time (decode-time sunset-time)))
       (list sunrise-time sunset-time))))
 
-(defun auto-dark-emacs/today () (calendar-current-date))
+(defun auto-dark-emacs/today ()
+  "Return current date as a list."
+  (calendar-current-date))
 
 (defun auto-dark-emacs/tomorrow ()
+  "Return next date as a list."
   (calendar-gregorian-from-absolute
-   (+ 1 (calendar-absolute-from-gregorian (auto-dark-emacs/today)))))
+   (1+ (calendar-absolute-from-gregorian (auto-dark-emacs/today)))))
 
 (defun auto-dark-emacs/is-dark-mode-builtin ()
   "Check if the dark mode is enabled.
 Invoke applescript using Emacs built-in AppleScript support to
 see if dark mode is enabled. Returns true if it is."
-  (ignore-errors
-    (ns-do-applescript
-     "tell application \"System Events\"
+  (let ((cmd-res (ignore-errors
+                   (ns-do-applescript
+                    "tell application \"System Events\"
   tell appearance preferences
     if (dark mode) then
       return \"true\"
@@ -114,7 +117,12 @@ see if dark mode is enabled. Returns true if it is."
       return \"false\"
     end if
   end tell
-end tell")))
+end tell"))))
+    (if (and cmd-res
+             (or (string-equal cmd-res "true")
+                 (string-equal cmd-res "false")))
+        cmd-res
+      nil)))
 
 (defun auto-dark-emacs/is-dark-mode-osascript ()
   "Invoke applescript using Emacs using external shell command.
@@ -122,8 +130,9 @@ this is less efficient, but works for non-GUI Emacs"
   (let ((cmd-res (string-trim
                   (shell-command-to-string
                    "osascript -e 'tell application \"System Events\" to tell appearance preferences to return dark mode'"))))
-    (if (or (string-equal cmd-res "true")
-            (string-equal cmd-res "false"))
+    (if (and cmd-res
+             (or (string-equal cmd-res "true")
+                 (string-equal cmd-res "false")))
         cmd-res
       nil)))
 
@@ -149,7 +158,6 @@ already set the theme for the current dark mode state."
                  (eq is-dark-mode auto-dark-emacs/last-dark-mode-state)))
         (run-with-idle-timer auto-dark-emacs/polling-interval-seconds nil
                              #'auto-dark-emacs/check-and-set-dark-mode)
-      (setq auto-dark-emacs/last-dark-mode-state is-dark-mode)
       (mapc #'disable-theme custom-enabled-themes)
       (if (string-equal is-dark-mode "true")
           (load-theme (if (listp auto-dark-emacs/dark-theme)
@@ -162,6 +170,7 @@ already set the theme for the current dark mode state."
                              (random (length auto-dark-emacs/light-theme)))
                       auto-dark-emacs/light-theme)
                     t))
+      (setq auto-dark-emacs/last-dark-mode-state is-dark-mode)
       (let* ((now (current-time))
              (today-sunrise-sunset (auto-dark-emacs/sunrise-sunset-times
                                     (auto-dark-emacs/today)))
