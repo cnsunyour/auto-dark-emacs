@@ -49,12 +49,6 @@ Emacs must be restarted for this value to take effect"
   :group 'auto-dark-emacs
   :type 'integer)
 
-(defcustom auto-dark-emacs/allow-osascript nil
-  "Whether to allow shell out to osascript to check dark-mode state.
-If `ns-do-applescript' is not available."
-  :group 'auto-dark-emacs
-  :type 'boolean)
-
 (defvar auto-dark-emacs/last-dark-mode-state nil)
 
 (defun auto-dark-emacs/hour-fraction-to-time (date hour-fraction)
@@ -125,7 +119,7 @@ end tell"))))
       nil)))
 
 (defun auto-dark-emacs/is-dark-mode-osascript ()
-  "Invoke applescript using Emacs using external shell command.
+  "Invoke applescript using external shell command.
 this is less efficient, but works for non-GUI Emacs"
   (let ((cmd-res (string-trim
                   (shell-command-to-string
@@ -140,12 +134,10 @@ this is less efficient, but works for non-GUI Emacs"
   "Weather if the dark mode is enabled.
 If supported, invoke applescript using Emacs built-in
 AppleScript support to see if dark mode is enabled. Otherwise,
-check dark-mode status using osascript, if allowed by
-auto-dark-emacs/allow-osascript."
+check dark-mode status using osascript."
   (if (fboundp 'ns-do-applescript)
       (auto-dark-emacs/is-dark-mode-builtin)
-    (when auto-dark-emacs/allow-osascript
-      (auto-dark-emacs/is-dark-mode-osascript))))
+    (auto-dark-emacs/is-dark-mode-osascript)))
 
 (defun auto-dark-emacs/check-and-set-dark-mode ()
   "Set the theme according to Mac OS's dark mode state.
