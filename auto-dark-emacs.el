@@ -133,7 +133,7 @@ this is less efficient, but works for non-GUI Emacs"
       nil)))
 
 (defun auto-dark-emacs/is-dark-mode ()
-  "Weather if the dark mode is enabled.
+  "Whether if the dark mode is enabled.
 If supported, invoke applescript using Emacs built-in
 AppleScript support to see if dark mode is enabled. Otherwise,
 check dark-mode status using osascript."
