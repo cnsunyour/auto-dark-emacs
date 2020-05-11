@@ -149,7 +149,7 @@ already set the theme for the current dark mode state."
   (let ((is-dark-mode (auto-dark-emacs/is-dark-mode)))
     (if (or (not is-dark-mode)
             (and auto-dark-emacs/last-dark-mode-state
-                 (eq is-dark-mode auto-dark-emacs/last-dark-mode-state)))
+                 (string-equal is-dark-mode auto-dark-emacs/last-dark-mode-state)))
         (run-with-idle-timer auto-dark-emacs/polling-interval-seconds nil
                              #'auto-dark-emacs/check-and-set-dark-mode)
       (mapc #'disable-theme custom-enabled-themes)
