@@ -79,11 +79,11 @@ HOUR-FRACTION is List of *local* times."
   "Get sunrise/sunset time of the special day.
 
 DATE is a Gregorian DATE.
-If the sunrise time earlier than 6:00, set it to 6:00.
+If the sunrise time later than 6:00, set it to 6:00.
 If the sunset time later than 19:00, set it to 19:00."
   (let*
       ((l (solar-sunrise-sunset date))
-       (sunrise-time (auto-dark-emacs/hour-fraction-to-time date (max 6.0 (caar l))))
+       (sunrise-time (auto-dark-emacs/hour-fraction-to-time date (min 6.0 (caar l))))
        (sunset-time (auto-dark-emacs/hour-fraction-to-time date (min 19.0 (caadr l)))))
     (if (> emacs-major-version 26)
         (list (encode-time (decode-time sunrise-time))
