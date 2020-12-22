@@ -104,16 +104,8 @@ If the sunset time later than 19:00, set it to 19:00."
 Invoke applescript using Emacs built-in AppleScript support to
 see if dark mode is enabled. Returns true if it is."
   (let ((cmd-res (ignore-errors
-                   (ns-do-applescript
-                    "tell application \"System Events\"
-  tell appearance preferences
-    if (dark mode) then
-      return \"true\"
-    else
-      return \"false\"
-    end if
-  end tell
-end tell"))))
+                   (do-applescript
+                    "tell application \"System Events\" to tell appearance preferences to return dark mode"))))
     (if (and cmd-res
              (or (string-equal cmd-res "true")
                  (string-equal cmd-res "false")))
@@ -137,7 +129,7 @@ this is less efficient, but works for non-GUI Emacs"
 If supported, invoke applescript using Emacs built-in
 AppleScript support to see if dark mode is enabled. Otherwise,
 check dark-mode status using osascript."
-  (if (fboundp 'ns-do-applescript)
+  (if (fboundp 'do-applescript)
       (auto-dark-emacs/is-dark-mode-builtin)
     (auto-dark-emacs/is-dark-mode-osascript)))
 
