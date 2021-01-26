@@ -104,8 +104,9 @@ If the sunset time later than 19:00, set it to 19:00."
 Invoke applescript using Emacs built-in AppleScript support to
 see if dark mode is enabled. Returns true if it is."
   (let ((cmd-res (replace-regexp-in-string "\"" ""
-                   (do-applescript
-                    "tell application \"System Events\"
+                  (ignore-errors
+                    (do-applescript
+                     "tell application \"System Events\"
 	tell appearance preferences
 		if (dark mode) then
 			return \"true\"
@@ -113,7 +114,7 @@ see if dark mode is enabled. Returns true if it is."
 			return \"false\"
 		end if
 	end tell
-end tell"))))
+end tell")))))
     (if (and cmd-res
              (or (string-equal cmd-res "true")
                  (string-equal cmd-res "false")))
