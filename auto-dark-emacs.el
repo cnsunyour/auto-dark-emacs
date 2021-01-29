@@ -1,4 +1,4 @@
-;;; auto-dark-eamcs.el --- Automatically set the dark-mode state of Emacs
+;;; auto-dark-eamcs.el --- Automatically set the dark-mode state of Emacs -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2019 Rahul M. Juliato
 
@@ -31,8 +31,7 @@
 
 ;;; Code:
 
-(eval-when-compile
-  (require 'cl))
+(require 'cl-lib)
 (require 'solar)
 
 (defcustom auto-dark-emacs/dark-theme 'wombat
@@ -59,19 +58,19 @@ HOUR-FRACTION is List of *local* times."
   (let*
       ((now (decode-time (current-time)))
 
-       (month (first   date))
-       (day   (second  date))
-       (year  (third   date))
-       (zone  (ninth   now))
+       (month (cl-first   date))
+       (day   (cl-second  date))
+       (year  (cl-third   date))
+       (zone  (cl-ninth   now))
 
        (frac-hour (cl-truncate hour-fraction))
-       (hour (first frac-hour))
+       (hour (cl-first frac-hour))
 
-       (frac-minutes (cl-truncate (* (second frac-hour) 60)))
-       (minute (first frac-minutes))
+       (frac-minutes (cl-truncate (* (cl-second frac-hour) 60)))
+       (minute (cl-first frac-minutes))
 
-       (frac-seconds (cl-truncate (* (second frac-minutes) 60)))
-       (sec (first frac-seconds)))
+       (frac-seconds (cl-truncate (* (cl-second frac-minutes) 60)))
+       (sec (cl-first frac-seconds)))
     (encode-time sec minute hour day month year zone)))
 
 
@@ -107,13 +106,13 @@ see if dark mode is enabled. Returns true if it is."
                   (ignore-errors
                     (do-applescript
                      "tell application \"System Events\"
-	tell appearance preferences
-		if (dark mode) then
-			return \"true\"
-		else
-			return \"false\"
-		end if
-	end tell
+    tell appearance preferences
+        if (dark mode) then
+            return \"true\"
+        else
+            return \"false\"
+        end if
+    end tell
 end tell")))))
     (if (and cmd-res
              (or (string-equal cmd-res "true")
