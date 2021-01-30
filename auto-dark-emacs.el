@@ -98,6 +98,14 @@ If the sunset time later than 19:00, set it to 19:00."
   (calendar-gregorian-from-absolute
    (1+ (calendar-absolute-from-gregorian (auto-dark-emacs/today)))))
 
+(defun auto-dark-emacs/is-dark-mode-ns-builtin ()
+  "Check if the dark mode is enabled.
+Determine what the current system appearance is by inspecting the
+  value of the `ns-system-appearance' variable."
+  (cond ((eq ns-system-appearance 'dark) "true")
+        ((eq ns-system-appearance 'light) "false")
+        (t nil)))
+
 (defun auto-dark-emacs/is-dark-mode-builtin ()
   "Check if the dark mode is enabled.
 Invoke applescript using Emacs built-in AppleScript support to
@@ -122,7 +130,7 @@ end tell")))))
 
 (defun auto-dark-emacs/is-dark-mode-osascript ()
   "Invoke applescript using external shell command.
-this is less efficient, but works for non-GUI Emacs"
+This is less efficient, but works for non-GUI Emacs"
   (let ((cmd-res (string-trim
                   (shell-command-to-string
                    "osascript -e 'tell application \"System Events\" to tell appearance preferences to return dark mode'"))))
@@ -137,9 +145,12 @@ this is less efficient, but works for non-GUI Emacs"
 If supported, invoke applescript using Emacs built-in
 AppleScript support to see if dark mode is enabled. Otherwise,
 check dark-mode status using osascript."
-  (if (fboundp 'do-applescript)
-      (auto-dark-emacs/is-dark-mode-builtin)
-    (auto-dark-emacs/is-dark-mode-osascript)))
+  (cond ((and (eq window-system 'ns)
+              (boundp 'ns-system-appearance))
+         (auto-dark-emacs/is-dark-mode-ns-builtin))
+        ((fboundp 'do-applescript)
+         (auto-dark-emacs/is-dark-mode-builtin))
+        (t (auto-dark-emacs/is-dark-mode-osascript))))
 
 (defun auto-dark-emacs/check-and-set-dark-mode ()
   "Set the theme according to Mac OS's dark mode state.
