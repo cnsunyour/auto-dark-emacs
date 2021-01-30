@@ -168,9 +168,9 @@ already set the theme for the current dark mode state."
       (let* ((now (current-time))
              (today-sunrise-sunset (auto-dark-emacs/sunrise-sunset-times
                                     (auto-dark-emacs/today)))
-             (sunrise-today (car today-sunrise-sunset))
-             (sunset-today (cadr today-sunrise-sunset))
-             (sunrise-tomorrow (car (auto-dark-emacs/sunrise-sunset-times
+             (sunrise-today (cl-first today-sunrise-sunset))
+             (sunset-today (cl-second today-sunrise-sunset))
+             (sunrise-tomorrow (cl-first (auto-dark-emacs/sunrise-sunset-times
                                      (auto-dark-emacs/tomorrow))))
              (next-change (cond ((time-less-p now sunrise-today) sunrise-today)
                                 ((time-less-p now sunset-today) sunset-today)
